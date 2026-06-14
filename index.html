@@ -749,5 +749,36 @@ async function boot(){
 }
 boot();
 </script>
+  <!-- PASTE THIS AT THE VERY BOTTOM OF YOUR index.html -->
+<script>
+/* ==========================================
+   PATCH 1: Fix ExerciseDB GIF API 404 Error
+   Intercepts fetch requests to the old broken URL 
+   and redirects them to the correct V1 API endpoint.
+   ========================================== */
+const _originalFetch = window.fetch;
+window.fetch = async function(url, options) {
+    if (typeof url === 'string' && url.includes('https://oss.exercisedb.dev/exercises')) {
+        // Rewrite to the correct API path
+        url = url.replace('https://oss.exercisedb.dev/exercises', 'https://oss.exercisedb.dev/api/v1/exercises');
+    }
+    return _originalFetch(url, options);
+};
+
+/* ==========================================
+   PATCH 2: Fix Live Sync UI Update
+   Wraps the original initFB function to force 
+   a UI redraw (render()) immediately after 
+   Firebase connects or fails.
+   ========================================== */
+const _originalInitFB = window.initFB;
+if (_originalInitFB) {
+    window.initFB = async function(cfg) {
+        await _originalInitFB(cfg);
+        // Trigger a UI redraw so the "Live Sync" badge appears instantly
+        if (typeof render === 'function') render();
+    };
+}
+</script>
 </body>
 </html>
